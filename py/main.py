@@ -10,7 +10,8 @@ class Mic:
     img = None
 
     max = None
-    max_index = None
+    max_img_index = None
+    max_center_index = None
     std = None
 
     def __init__(self, port_name):
@@ -44,12 +45,13 @@ class Mic:
     def handle(self):
         img = np.array(self.raw_img)
         img = img.reshape(16, 16)
-        img = img.T
+        # img = img.T
         img = img[::-1, ::-1]
         self.img = img
 
         self.max = img.max()
-        self.max_index = np.unravel_index(img.argmax(), img.shape)
+        self.max_img_index = np.unravel_index(img.argmax(), img.shape)
+        self.max_center_index = (self.max_img_index[1] - 8, -self.max_img_index[0] + 8)
         self.std = img.std()
         
     def refresh(self):
@@ -61,6 +63,6 @@ mic = Mic("COM8")
 while True:
     mic.refresh()
     if mic.max == 255:
-        print(mic.max_index)
+        print(mic.max_center_index)
         # plt.imshow(mic.img, cmap = plt.cm.gray_r)
         # plt.pause(0.01)
