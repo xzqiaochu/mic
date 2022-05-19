@@ -1,8 +1,6 @@
-from regex import L
 import serial
 import numpy as np
 import matplotlib.pyplot as plt
-from sympy import N
 
 H = 7
 
@@ -83,7 +81,7 @@ class Solve:
             N = np.matrix([mic.max_center_index[0], mic.max_center_index[1], H])
             N = N * mic.direction
             N = np.array(N)
-            l, m, n = N[0][0], N[0][1], N[0][2] 
+            l, m, n = N[0][0], N[0][1], N[0][2]
             x0 = mic.coordinate[0]
             y0 = mic.coordinate[1]
             z0 = mic.coordinate[2]
