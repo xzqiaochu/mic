@@ -1,6 +1,7 @@
 import serial
 import numpy as np
 import matplotlib.pyplot as plt
+from time import time
 
 H = 7
 
@@ -59,17 +60,21 @@ class Mic:
 
         self.max = img.max()
         self.max_img_index = np.unravel_index(img.argmax(), img.shape)
-        self.max_center_index = (self.max_img_index[1] - 8, -self.max_img_index[0] + 8)
+        self.max_center_index = (
+            self.max_img_index[1] - 8, -self.max_img_index[0] + 8)
         self.std = img.std()
-        
+
     def refresh(self):
         self.read()
         self.handle()
+
 
 class Solve:
 
     mics = []
     pos = None
+    valid = False
+    update = False
 
     def __init__(self, mics):
         self.mics = mics
@@ -78,7 +83,8 @@ class Solve:
         A = []
         B = []
         for mic in self.mics:
-            N = np.matrix([mic.max_center_index[0], mic.max_center_index[1], H])
+            N = np.matrix([mic.max_center_index[0],
+                          mic.max_center_index[1], H])
             N = N * mic.direction
             N = np.array(N)
             l, m, n = N[0][0], N[0][1], N[0][2]
@@ -96,29 +102,52 @@ class Solve:
         B = np.matrix(B)
         B = B.reshape((len(self.mics) * 3, 1))
         try:
-            self.pos = (A.T * A).I * A.T * B
-            return np.array(self.pos)
+            pos = np.array((A.T * A).I * A.T * B)
+            self.pos = pos
+            if all(_ >= 0 and _ <= 40 for _ in pos):
+                self.valid = True
+            else:
+                self.valid = False
+            self.update = True
         except:
-            return None
+            self.update = False
 
-mic1 = Mic("COM6", [20, 20, 0], np.matrix([[ 0,  1,  0],
+def axClear(ax):
+    ax.cla()
+    ax.set_xlim(0, 40)
+    ax.set_ylim(0, 40)
+    ax.set_zlim(0, 40) # 设置每个坐标轴的取值范围
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+
+
+mic1 = Mic("COM6", [20, 20, 0], np.matrix([[0,  1,  0],
                                            [-1,  0,  0],
-                                           [ 0,  0,  1]]))
-mic2 = Mic("COM11", [0, 20, 20], np.matrix([[ 0,  1,  0],
-                                            [ 0,  0,  1],
-                                            [ 1,  0,  0]]))
+                                           [0,  0,  1]]))
+mic2 = Mic("COM11", [0, 20, 20], np.matrix([[0,  1,  0],
+                                            [0,  0,  1],
+                                            [1,  0,  0]]))
 mics = [mic1, mic2]
 solve = Solve(mics)
-# plt.ion()
+plt.ion()
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+last = time()
 while True:
-    mic1.refresh()
-    mic2.refresh()
-    if mic1.max == 255 and mic2.max == 255:
-        # mic1.max_center_index = (0, 0)
-        # mic2.max_center_index = (0, 0)
-        pos = solve.solve()
-        if pos.all() != None:
-            print("%3.0f, %3.0f, %3.0f" % (pos[0], pos[1], pos[2]))
-        # print(mic1.max_center_index, mic2.max_center_index)
-        # plt.imshow(mic.img, cmap = plt.cm.gray_r)
-        # plt.pause(0.01)
+    for mic in mics:
+        mic.refresh()
+    if all(mic.max == 255 for mic in mics):
+        solve.solve()
+        if solve.update:
+            pos = solve.pos
+            now = time()
+            print("%3.0f, %3.0f, %3.0f, %.1ffps" % (pos[0], pos[1], pos[2], 1 / (now - last)))
+            last = now
+            # plt.imshow(mic.img, cmap = plt.cm.gray_r)
+            axClear(ax)
+            if solve.valid:
+                ax.scatter(pos[0], pos[1], pos[2], c="b", marker="o")
+            else:
+                ax.scatter(pos[0], pos[1], pos[2], c="r", marker="o")
+            plt.pause(0.001)
