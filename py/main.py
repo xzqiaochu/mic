@@ -5,6 +5,7 @@ from multiprocessing import Process, Queue
 from time import time
 
 H = 7
+MAX_CACHE = 10
 
 class MicData():
     coordinate = []
@@ -41,7 +42,7 @@ class Mic(Process):
     def read(self):
         # pass
         while True:
-            self.__ser.flushInput()
+            # self.__ser.flushInput()
             while ord(self.__ser.read()) != 0xA5:
                 pass
             id = ord(self.__ser.read())
@@ -85,13 +86,14 @@ class Mic(Process):
         self.data.direction = self.direction
         self.__ser.open()
         while True:
-            if self.q2solve.empty():
-                self.refresh()
-                self.q2solve.put(self.data)
-
+            self.refresh()
+            self.q2solve.put(self.data)
+            if self.q2solve.qsize() > MAX_CACHE:
+                self.q2solve.get()
 
 class SolveData():
     pos = np.array(0)
+    max_p = []
 
 class Solve(Process):
 
@@ -137,11 +139,15 @@ class Solve(Process):
             return False
 
     def refresh(self):
-        while not self.q2solve.qsize() == self.mic_num:
-            pass
         self.micdatas = []
-        for _ in range(self.mic_num):
-            self.micdatas.append(self.q2solve.get())
+        tmplist = []
+        while len(self.micdatas) < self.mic_num:
+            micdata = self.q2solve.get()
+            if micdata.id not in tmplist:
+                self.micdatas.append(micdata)
+                tmplist.append(micdata.id)
+        self.micdatas.sort(key = lambda r:r.id)
+        self.data.max_p = [micdata.max_p for micdata in self.micdatas]
         while self.solve() == False:
             pass
 
@@ -150,7 +156,6 @@ class Solve(Process):
             if self.q2show.empty():
                 self.refresh()
                 self.q2show.put(self.data)
-
 
 class Show(Process):
 
@@ -178,7 +183,9 @@ class Show(Process):
     def showText(self):
         now = time()
         pos = self.solvedata.pos
-        print("%3.0f, %3.0f, %3.0f, %.1ffps" % (pos[0], pos[1], pos[2], 1 / (now - self.last)))
+        print("[%.1ffps]" % (1 / (now - self.last)), end = "\t")
+        print("%2.0f, %2.0f, %2.0f" % (pos[0], pos[1], pos[2]), end = "\t")
+        print(self.solvedata.max_p)
         self.last = now
 
     def showImg(self):
