@@ -1,15 +1,34 @@
 import serial
+import serial.tools.list_ports
 import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
 from time import time
 
 H = 7
-MAX_CACHE = 10
+Q2SOLVE_MAX_CACHE = 2
+Q2SHOW_MAX_CACHE = 1
+
+class MicConfig:
+    pos = []
+    dir = []
+
+    def __init__(self, pos, dir):
+        self.pos = pos
+        self.dir = dir
+
+g_micconfigs = {}
+g_micconfigs[1] = MicConfig([20, 20, 0], [[ 0,  1,  0],
+                                          [-1,  0,  0],
+                                          [ 0,  0,  1]])
+g_micconfigs[2] = MicConfig([0, 20, 20], [[ 0,  1,  0],
+                                          [ 0,  0,  1],
+                                          [ 1,  0,  0]])
+g_micconfigs[3] = MicConfig([20, 0, 20], [[-1,  0,  0],
+                                          [ 0,  0,  1],
+                                          [ 0,  1,  0]])
 
 class MicData():
-    coordinate = []
-    direction = []
     id = 0
     img = np.array(0)
     max = 0
@@ -18,42 +37,36 @@ class MicData():
 
 class Mic(Process):
 
+    ser = serial.Serial()
     q2solve = Queue()
-    __ser = serial.Serial()
 
     raw_img = []
     data = MicData()
 
-    coordinate = []
-    direction = []
-
-    def __init__(self, port_name, coordinate, direction, q2solve):
+    def __init__(self, port_name, q2solve):
         Process.__init__(self)
+        self.ser = serial.Serial()
+        self.ser.port = port_name
+        self.ser.baudrate = 115200
+        self.ser.bytesize = 8
+        self.ser.stopbits = 1
+        self.ser.parity = "N"
         self.q2solve = q2solve
-        self.coordinate = coordinate
-        self.direction = direction
-        self.__ser = serial.Serial()
-        self.__ser.port = port_name
-        self.__ser.baudrate = 115200
-        self.__ser.bytesize = 8
-        self.__ser.stopbits = 1
-        self.__ser.parity = "N"
 
     def read(self):
-        # pass
         while True:
-            # self.__ser.flushInput()
-            while ord(self.__ser.read()) != 0xA5:
+            self.ser.flushInput()
+            while ord(self.ser.read()) != 0xA5:
                 pass
-            id = ord(self.__ser.read())
+            id = ord(self.ser.read())
             img = []
             s = 0
             for _ in range(16 * 16):
-                data = ord(self.__ser.read())
+                data = ord(self.ser.read())
                 img.append(data)
                 s = s + data
-            check = ord(self.__ser.read())
-            end = ord(self.__ser.read())
+            check = ord(self.ser.read())
+            end = ord(self.ser.read())
             if end == 0x5A and s % 0x100 == check:
                 self.data.id = id
                 self.raw_img = img
@@ -77,19 +90,17 @@ class Mic(Process):
     def refresh(self):
         self.read()
         self.handle()
-        while self.data.max == 0:
+        while self.data.max != 255:
             self.read()
             self.handle()
 
     def run(self):
-        self.data.coordinate = self.coordinate
-        self.data.direction = self.direction
-        self.__ser.open()
+        self.ser.open()
         while True:
             self.refresh()
-            self.q2solve.put(self.data)
-            if self.q2solve.qsize() > MAX_CACHE:
+            if self.q2solve.qsize() > Q2SOLVE_MAX_CACHE:
                 self.q2solve.get()
+            self.q2solve.put(self.data)
 
 class SolveData():
     pos = np.array(0)
@@ -115,13 +126,13 @@ class Solve(Process):
         A = []
         B = []
         for micdata in self.micdatas:
+            micconfig = g_micconfigs[micdata.id]
+            pos = micconfig.pos
+            dir = micconfig.dir
             N = np.matrix([micdata.max_p[0], micdata.max_p[1], H])
-            N = N * micdata.direction
-            N = np.array(N)
+            N = np.array(N * dir)
             l, m, n = N[0][0], N[0][1], N[0][2]
-            x0 = micdata.coordinate[0]
-            y0 = micdata.coordinate[1]
-            z0 = micdata.coordinate[2]
+            x0, y0, z0 = pos[0], pos[1], pos[2]
             A.append([m, -l, 0])
             B.append(-(l * y0 - m * x0))
             A.append([0, n, -m])
@@ -153,9 +164,10 @@ class Solve(Process):
 
     def run(self):
         while True:
-            if self.q2show.empty():
-                self.refresh()
-                self.q2show.put(self.data)
+            self.refresh()
+            if self.q2show.qsize() > Q2SHOW_MAX_CACHE:
+                self.q2show.get()
+            self.q2show.put(self.data)
 
 class Show(Process):
 
@@ -206,20 +218,24 @@ class Show(Process):
             plt.pause(0.001)
 
 def main():
-    mic_num = 2
-    q2solve = Queue(mic_num)
-    q2show = Queue(1)
-    mic1 = Mic("COM6", [20, 20, 0], np.matrix([[0,  1,  0],
-                                            [-1,  0,  0],
-                                            [0,  0,  1]]), q2solve)
-    mic2 = Mic("COM11", [0, 20, 20], np.matrix([[0,  1,  0],
-                                                [0,  0,  1],
-                                                [1,  0,  0]]), q2solve)
-    solve = Solve(mic_num, q2solve, q2show)
+    ports = serial.tools.list_ports.comports()
+    ports_num = len(ports)
+    if ports_num == 0:
+        print ("No serial port found!")
+        return
+
+    q2solve = Queue(Q2SOLVE_MAX_CACHE)
+    q2show = Queue(Q2SHOW_MAX_CACHE)
+
+    mics = []
+    for port in ports:
+        mic = Mic(port.device, q2solve)
+        mics.append(mic)
+    solve = Solve(ports_num, q2solve, q2show)
     show = Show(q2show)
 
-    mic1.start()
-    mic2.start()
+    for mic in mics:
+        mic.start()
     solve.start()
     show.start()
 
