@@ -6,7 +6,8 @@ from multiprocessing import Process, Queue
 from time import time
 import copy
 
-H = 7
+H = 8.5
+MIN_VAL = 255
 Q2SOLVE_MAX_CACHE = 9
 Q2SHOW_MAX_CACHE = 1
 
@@ -93,7 +94,7 @@ class Mic(Process):
         st = time()
         self.read()
         self.handle()
-        while self.data.max == 0:
+        while self.data.max < MIN_VAL:
             self.read()
             self.handle()
         self.data.handle_t = time() - st
@@ -111,7 +112,6 @@ class SolveData():
     micdatas = [MicData()]
     pos = np.array(0)
     max_p = []
-    wait_t = 0
     handle_t = 0
 
 class Solve(Process):
@@ -168,13 +168,13 @@ class Solve(Process):
 
     def refresh(self):
         st = time()
+        self.waitReady()
         while self.solve() == False:
-            pass
+            self.waitReady()
         self.data.handle_t = time() - st
 
     def run(self):
         while True:
-            self.waitReady()
             self.refresh()
             if self.q2show.qsize() > Q2SHOW_MAX_CACHE:
                 self.q2show.get()
@@ -205,6 +205,10 @@ class Show(Process):
         self.ax.set_xlabel('X')
         self.ax.set_ylabel('Y')
         self.ax.set_zlabel('Z')
+        self.ax.scatter(0, 0, 0, c="black", marker="o")
+        self.ax.plot([0, 0], [0, 0], [0, 40], c = "black")
+        self.ax.plot([0, 0], [0, 40], [0, 0], c = "black")
+        self.ax.plot([0, 40], [0, 0], [0, 0], c = "black")
 
     def showText(self):
         now = time()
@@ -213,14 +217,28 @@ class Show(Process):
         print("%2.0f, %2.0f, %2.0f" % (pos[0], pos[1], pos[2]), end = "\t")
         print([micdata.max_p for micdata in self.solvedata.micdatas], end = "\t")
         print([round(micdata.handle_t * 1000) for micdata in self.solvedata.micdatas], end = "\t")
-        print((round(self.solvedata.wait_t * 1000), round(self.solvedata.handle_t * 1000)), end = "\t")
+        print(round(self.solvedata.handle_t * 1000), end = "\t")
         print(round((now - self.last_t) * 1000))
         self.last_t = now
 
     def showImg(self):
         self.clear()
         pos = self.solvedata.pos
-        self.ax.scatter(pos[0], pos[1], pos[2], c="b", marker="o")
+        self.ax.scatter(pos[0], pos[1], pos[2], c="r", marker="o")
+
+        for micdata in self.solvedata.micdatas:
+            micconfig = g_micconfigs[micdata.id]
+            pos = micconfig.pos
+            dir = micconfig.dir
+            N = np.matrix([micdata.max_p[0], micdata.max_p[1], H])
+            N = np.array(N * dir)
+            l, m, n = N[0][0], N[0][1], N[0][2]
+            x0, y0, z0 = pos[0], pos[1], pos[2]
+            t = 40 / H
+            x1 = t * l + x0
+            y1 = t * m + y0
+            z1 = t * n + z0
+            self.ax.plot([x0, x1], [y0, y1], [z0, z1], c = "b")
 
     def waitReady(self):
         st = time()
@@ -234,6 +252,7 @@ class Show(Process):
         self.showImg()
 
     def run(self):
+        self.ax.view_init(elev = 45, azim = 45)
         while True:
             self.waitReady()
             self.refresh()
