@@ -111,7 +111,7 @@ class Mic(Process):
 class SolveData():
     micdatas = [MicData()]
     pos = np.array(0)
-    max_p = []
+    loss = 0
     handle_t = 0
 
 class Solve(Process):
@@ -149,7 +149,11 @@ class Solve(Process):
         B = np.matrix(B)
         B = B.reshape((self.mic_num * 3, 1))
         try:
-            self.data.pos = np.array((A.T * A).I * A.T * B)
+            X = (A.T * A).I * A.T * B
+            E = A * X - B 
+            self.data.pos = np.array(X)
+            loss2 = sum([e ** 2 for e in np.array(E)])[0] / (self.mic_num * 3)
+            self.data.loss = loss2 ** 0.5
             return True
         except:
             return False
@@ -216,6 +220,7 @@ class Show(Process):
         print("[%.1ffps]" % (1 / (now - self.last_t)), end = "\t")
         print("%2.0f, %2.0f, %2.0f" % (pos[0], pos[1], pos[2]), end = "\t")
         print([micdata.max_p for micdata in self.solvedata.micdatas], end = "\t")
+        print(round(self.solvedata.loss, 1), end = "\t")
         print([round(micdata.handle_t * 1000) for micdata in self.solvedata.micdatas], end = "\t")
         print(round(self.solvedata.handle_t * 1000), end = "\t")
         print(round((now - self.last_t) * 1000))
@@ -243,7 +248,7 @@ class Show(Process):
     def waitReady(self):
         st = time()
         while self.q2show.empty():
-            pass
+            plt.pause(0.01)
         self.wait_t = time() - st
 
     def refresh(self):
@@ -256,7 +261,6 @@ class Show(Process):
         while True:
             self.waitReady()
             self.refresh()
-            plt.pause(0.001)
 
 def main():
     ports = serial.tools.list_ports.comports()
