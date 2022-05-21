@@ -4,9 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
 from time import time
+import copy
 
 H = 7
-Q2SOLVE_MAX_CACHE = 2
+Q2SOLVE_MAX_CACHE = 9
 Q2SHOW_MAX_CACHE = 1
 
 class MicConfig:
@@ -34,6 +35,7 @@ class MicData():
     max = 0
     std = 0
     max_p = (0, 0)
+    handle_t = 0
 
 class Mic(Process):
 
@@ -55,7 +57,7 @@ class Mic(Process):
 
     def read(self):
         while True:
-            self.ser.flushInput()
+            # self.ser.flushInput()
             while ord(self.ser.read()) != 0xA5:
                 pass
             id = ord(self.ser.read())
@@ -88,11 +90,13 @@ class Mic(Process):
         self.data.max_p = max_p
 
     def refresh(self):
+        st = time()
         self.read()
         self.handle()
-        while self.data.max != 255:
+        while self.data.max == 0:
             self.read()
             self.handle()
+        self.data.handle_t = time() - st
 
     def run(self):
         self.ser.open()
@@ -100,32 +104,33 @@ class Mic(Process):
             self.refresh()
             if self.q2solve.qsize() > Q2SOLVE_MAX_CACHE:
                 self.q2solve.get()
-            self.q2solve.put(self.data)
+            data = copy.deepcopy(self.data)
+            self.q2solve.put(data)
 
 class SolveData():
+    micdatas = [MicData()]
     pos = np.array(0)
     max_p = []
+    wait_t = 0
+    handle_t = 0
 
 class Solve(Process):
-
     mic_num = 0
     q2solve = Queue()
     q2show = Queue()
 
-    micdatas = [MicData()]
     data = SolveData()
 
     def __init__(self, mic_num, q2solve, q2show):
         Process.__init__(self)
         self.mic_num = mic_num
-        self.micdatas = []
         self.q2solve = q2solve
         self.q2show = q2show
 
     def solve(self):
         A = []
         B = []
-        for micdata in self.micdatas:
+        for micdata in self.data.micdatas:
             micconfig = g_micconfigs[micdata.id]
             pos = micconfig.pos
             dir = micconfig.dir
@@ -149,25 +154,32 @@ class Solve(Process):
         except:
             return False
 
-    def refresh(self):
-        self.micdatas = []
+    def waitReady(self):
+        st = time()
+        self.data.micdatas = []
         tmplist = []
-        while len(self.micdatas) < self.mic_num:
+        while len(self.data.micdatas) < self.mic_num:
             micdata = self.q2solve.get()
             if micdata.id not in tmplist:
-                self.micdatas.append(micdata)
+                self.data.micdatas.append(micdata)
                 tmplist.append(micdata.id)
-        self.micdatas.sort(key = lambda r:r.id)
-        self.data.max_p = [micdata.max_p for micdata in self.micdatas]
+        self.data.micdatas.sort(key = lambda r:r.id)
+        self.data.wait_t = time() - st
+
+    def refresh(self):
+        st = time()
         while self.solve() == False:
             pass
+        self.data.handle_t = time() - st
 
     def run(self):
         while True:
+            self.waitReady()
             self.refresh()
             if self.q2show.qsize() > Q2SHOW_MAX_CACHE:
                 self.q2show.get()
-            self.q2show.put(self.data)
+            data = copy.deepcopy(self.data)
+            self.q2show.put(data)
 
 class Show(Process):
 
@@ -176,7 +188,9 @@ class Show(Process):
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     solvedata = SolveData()
-    last = time()
+
+    last_t = 0
+    wait_t = 0
 
     def __init__(self, q2show):
         Process.__init__(self)
@@ -195,25 +209,33 @@ class Show(Process):
     def showText(self):
         now = time()
         pos = self.solvedata.pos
-        print("[%.1ffps]" % (1 / (now - self.last)), end = "\t")
+        print("[%.1ffps]" % (1 / (now - self.last_t)), end = "\t")
         print("%2.0f, %2.0f, %2.0f" % (pos[0], pos[1], pos[2]), end = "\t")
-        print(self.solvedata.max_p)
-        self.last = now
+        print([micdata.max_p for micdata in self.solvedata.micdatas], end = "\t")
+        print([round(micdata.handle_t * 1000) for micdata in self.solvedata.micdatas], end = "\t")
+        print((round(self.solvedata.wait_t * 1000), round(self.solvedata.handle_t * 1000)), end = "\t")
+        print(round((now - self.last_t) * 1000))
+        self.last_t = now
 
     def showImg(self):
         self.clear()
         pos = self.solvedata.pos
         self.ax.scatter(pos[0], pos[1], pos[2], c="b", marker="o")
 
-    def refresh(self):
+    def waitReady(self):
+        st = time()
         while self.q2show.empty():
             pass
+        self.wait_t = time() - st
+
+    def refresh(self):
         self.solvedata = self.q2show.get()
         self.showText()
         self.showImg()
 
     def run(self):
         while True:
+            self.waitReady()
             self.refresh()
             plt.pause(0.001)
 
