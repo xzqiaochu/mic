@@ -137,15 +137,15 @@ class Solve(Process):
                     val = img[j][i]
                     if val == 0:
                         continue
-                    w = val ** 0.5
+                    w = val ** 0.5 / 255 ** 0.5
                     x, y = i - 8, - j + 8
                     micconfig = g_micconfigs[micdata.id]
                     pos = micconfig.pos
                     dir = micconfig.dir
                     N = np.matrix([x, y, H])
                     N = np.array(N * dir)
-                    l, m, n = [_ for _ in N[0]] 
-                    x0, y0, z0 = [_ for _ in pos]
+                    l, m, n = N[0]
+                    x0, y0, z0 = pos
                     A.append([_ * w for _ in [m, -l, 0]])
                     B.append(-(l * y0 - m * x0) * w)
                     A.append([_ * w for _ in [0, n, -m]])
@@ -240,18 +240,26 @@ class Show(Process):
         self.ax.scatter(pos[0], pos[1], pos[2], c="r", marker="o")
 
         for micdata in self.solvedata.micdatas:
-            micconfig = g_micconfigs[micdata.id]
-            pos = micconfig.pos
-            dir = micconfig.dir
-            N = np.matrix([micdata.max_p[0], micdata.max_p[1], H])
-            N = np.array(N * dir)
-            l, m, n = N[0][0], N[0][1], N[0][2]
-            x0, y0, z0 = pos[0], pos[1], pos[2]
-            t = 40 / H
-            x1 = t * l + x0
-            y1 = t * m + y0
-            z1 = t * n + z0
-            self.ax.plot([x0, x1], [y0, y1], [z0, z1], c = "b")
+            img = micdata.img
+            for i in range(len(img)):
+                for j in range(len(img[0])):
+                    val = img[j][i]
+                    if val == 0:
+                        continue
+                    w = val ** 0.5 / 255 ** 0.5
+                    x, y = i - 8, - j + 8
+                    micconfig = g_micconfigs[micdata.id]
+                    pos = micconfig.pos
+                    dir = micconfig.dir
+                    N = np.matrix([x, y, H])
+                    N = np.array(N * dir)
+                    l, m, n = N[0]
+                    x0, y0, z0 = pos
+                    t = 40 / H
+                    x1 = t * l + x0
+                    y1 = t * m + y0
+                    z1 = t * n + z0
+                    self.ax.plot([x0, x1], [y0, y1], [z0, z1], color = [0, 0, 1, w])
 
     def waitReady(self):
         st = time()
