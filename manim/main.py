@@ -1,3 +1,4 @@
+from turtle import left
 from manimlib import *
 from os import system
 
@@ -40,7 +41,7 @@ class Scene2(Scene):
                 ReplacementTransform(line2, line4),
                 rate_func = smooth, run_time = 3)
 
-        self.play(Indicate(line4))
+        self.play(Indicate(line4, color = RED, scale_factor = 1))
         self.play(FadeOut(line4))
 
         line5 = Line(2.4 * UP + 4 * RIGHT, 2 * DOWN + 0.8 * RIGHT, stroke_color = BLUE)
@@ -52,8 +53,7 @@ class Scene2(Scene):
                 rate_func = smooth, run_time = 3)
 
         line6 = Line(2.4 * UP + 4 * RIGHT, 2 * DOWN + 0.8 * LEFT, stroke_color = BLUE)
-        self.add(line6)
-        self.remove(image_question)
+        self.play(FadeIn(line6), FadeOut(image_question))
 
         b1 = Brace(line5, direction = line5.copy().rotate(PI / 2).get_unit_vector())
         b1text = b1.get_text("L", font="SimSun")
@@ -65,14 +65,39 @@ class Scene2(Scene):
         line6s1 = Line(line6s1_start, line6s1_end)
         b2 = Brace(line6s1, direction = line6s1.copy().rotate(- PI / 2).get_unit_vector())
         b2text = b2.get_text("L", font="SimSun")
+        self.play(FadeIn(b1), FadeIn(b1text),
+                FadeIn(b2), FadeIn(b2text))
+        
         line6s2_start = line6s1_end
         line6s2_end = 2 * DOWN + 0.8 * LEFT
         line6s2 = Line(line6s2_start, line6s2_end)
         b3 = Brace(line6s2, direction = line6s2.copy().rotate(- PI / 2).get_unit_vector())
         b3text = b3.get_text("△L", font="SimSun")
-        self.play(ShowCreation(b1), ShowCreation(b1text),
-                ShowCreation(b2), ShowCreation(b2text),
-                ShowCreation(b3), ShowCreation(b3text))
+        self.play(FadeIn(b3), FadeIn(b3text))
+
+        self.play(Flash(b3text))
+
+        p1 = Dot().move_to(2 * DOWN + 0.8 * RIGHT)
+        p2 = Dot().move_to(2 * DOWN + 0.8 * LEFT)
+        c1 = Circle(radius = 0.2, color = WHITE).move_to(2 * DOWN + 0.8 * RIGHT)
+        c2 = Circle(radius = 0.2, color = WHITE).move_to(2 * DOWN + 0.8 * LEFT)
+        l1 = Line(2 * DOWN + 0.6 * RIGHT, 2 * DOWN + 0.6 * LEFT)
+        g1 = VGroup(p1, p2, c1, c2, l1)
+        self.play(FadeIn(g1), FadeOut(image_person))
+
+        g0 = VGroup(b1, b1text, b2, b2text, b3, b3text, line5, line6)
+        self.play(FadeOut(image_car), FadeOut(g0), ApplyMethod(g1.move_to, LEFT * 3 + 0.2 * TOP))
+        
+        p3 = Dot().move_to(LEFT)
+        p4 = Dot()
+        p5 = Dot().move_to(RIGHT)
+        c3 = Circle(radius = 0.2, color = WHITE).move_to(LEFT)
+        c4 = Circle(radius = 0.2, color = WHITE)
+        c5 = Circle(radius = 0.2, color = WHITE).move_to(RIGHT)
+        l2 = Line(0.8 * LEFT, 0.2 * LEFT)
+        l3 = Line(0.8 * RIGHT, 0.2 * RIGHT)
+        g2 = VGroup(p3, p4, p5, c3, c4, c5, l2, l3).move_to(LEFT * 3 + 0.2 * DOWN)
+        self.play(FadeIn(g2))
 
 if __name__ == "__main__":
     system("manimgl %s Scene2" % __file__)
