@@ -41,8 +41,8 @@ class Scene2(Scene):
                 rate_func = smooth, run_time = 3)
 
         for _ in range(2):
-                self.play(ApplyMethod(line4.set_style, {"stroke_color" : RED}), run_time = 1/2)
-                self.play(ApplyMethod(line4.set_style, {"stroke_color" : BLUE}), run_time = 1/2)
+            self.play(ApplyMethod(line4.set_style, {"stroke_color" : RED}), run_time = 1/2)
+            self.play(ApplyMethod(line4.set_style, {"stroke_color" : BLUE}), run_time = 1/2)
 
         self.play(FadeOut(line4))
 
@@ -358,7 +358,83 @@ class Scene6(Scene):
 
         self.play(ShrinkToCenter(VGroup(r1, t1, r2, t2)))
 
+class Scene7(Scene):
+    def construct(self):
+        mic = ImageMobject("./manim/img/mic", height = 4).move_to(LEFT * 2)
+        k210 = ImageMobject("./manim/img/K210", height = 1.5).move_to(RIGHT * 2)
+        arrow1 = Arrow(LEFT * 1.2, RIGHT * 0.7, color = BLUE)
+        text1 = Text("I2S协议", font = "SimSun", font_size = 18).next_to(arrow1, UP)
+        self.play(SpinInFromNothing(mic), SpinInFromNothing(k210), Write(VGroup(arrow1, text1)))
+
+        def func1(mic):
+            mic.move_to(LEFT * 5)
+            mic.scale(0.75)
+            return mic
+        def func2(k210):
+            k210.move_to(LEFT * 2)
+            k210.scale(0.75)
+            return k210
+        arrow1n = Arrow(LEFT * 4.5, LEFT * 3, color = BLUE)
+        text1n = Text("I2S协议", font = "SimSun", font_size = 18).next_to(arrow1n, UP)
+        self.play(ApplyFunction(func1, mic), ApplyFunction(func2, k210),
+                ReplacementTransform(arrow1, arrow1n),
+                ReplacementTransform(text1, text1n))
+
+        mic_c1 = mic.copy().shift(UP * 2)
+        k210_c1 = k210.copy().shift(UP * 2)
+        arrow1n_c1 = arrow1n.copy().shift(UP * 2)
+        text1n_c1 = text1n.copy().shift(UP * 2)
+        mic_c2 = mic.copy().shift(DOWN * 2)
+        k210_c2 = k210.copy().shift(DOWN * 2)
+        arrow1n_c2 = arrow1n.copy().shift(DOWN * 2)
+        text1n_c2 = text1n.copy().shift(DOWN * 2)
+        self.play(SpinInFromNothing(mic_c1), SpinInFromNothing(mic_c2),
+                SpinInFromNothing(k210_c1), SpinInFromNothing(k210_c2),
+                Write(VGroup(arrow1n_c1, text1n_c1)), Write(VGroup(arrow1n_c2, text1n_c2)))
+
+        arrow2 = Arrow(LEFT, RIGHT * 1.7, color = BLUE)
+        arrow2_text = Text("USB串口", font = "SimSun", font_size = 18).next_to(arrow2, UP)
+        arrow2_c1 = arrow2.copy().shift(UP * 2)
+        arrow2_c2 = arrow2.copy().shift(DOWN * 2)
+        arrow2_text_c1 = arrow2_text.copy().shift(UP * 2)
+        arrow2_text_c2 = arrow2_text.copy().shift(DOWN * 2)
+        self.play(Write(VGroup(arrow2, arrow2_text)),
+                Write(VGroup(arrow2_c1, arrow2_text_c1)),
+                Write(VGroup(arrow2_c2, arrow2_text_c2)))
+
+        process2_text = Text("位置解算进程", font = "SimSun", font_size = 24).move_to(RIGHT * 3)
+        process2 = RoundedRectangle(corner_radius = 0.1, fill_color = RED).surround(process2_text)
+        process1_text = Text("串口通信进程", font = "SimSun", font_size = 24).next_to(process2, UP, buff = 1)
+        process1 = RoundedRectangle(corner_radius = 0.1, fill_color = RED).surround(process1_text)
+        process3_text = Text("数据显示进程", font = "SimSun", font_size = 24).next_to(process2, DOWN, buff = 1)
+        process3 = RoundedRectangle(corner_radius = 0.1, fill_color = RED).surround(process3_text)
+        process = VGroup(process1, process1_text, process2, process2_text, process3, process3_text)
+        computer = RoundedRectangle(corner_radius = 0.2, width = 3, height = 6).move_to(RIGHT * 3)
+        computer_text = Text("电脑", font = "SimSun", font_size = 24).next_to(computer, UP)
+        self.play(ShowCreation(VGroup(computer_text, computer)))
+        self.play(ShowCreation(process))
+        self.remove(process1_text)
+        self.add(process1_text)
+
+        for _ in range(2):
+            self.play(ApplyMethod(process1.set_style, {"fill_opacity" : 1}), run_time = 1/2)
+            self.play(ApplyMethod(process1.set_style, {"fill_opacity" : 0}), run_time = 1/2)
+        arrow3 = Arrow(RIGHT * 3 + 1.4 * UP, RIGHT * 3 + 0.4 * UP, color = BLUE)
+        self.play(Write(arrow3))
+        for _ in range(2):
+            self.play(ApplyMethod(process2.set_style, {"fill_opacity" : 1}), run_time = 1/2)
+            self.play(ApplyMethod(process2.set_style, {"fill_opacity" : 0}), run_time = 1/2)
+        arrow4 = Arrow(RIGHT * 3 + 0.4 * DOWN, RIGHT * 3 + 1.4 * DOWN, color = BLUE)
+        self.play(Write(arrow4))
+        for _ in range(2):
+            self.play(ApplyMethod(process3.set_style, {"fill_opacity" : 1}), run_time = 1/2)
+            self.play(ApplyMethod(process3.set_style, {"fill_opacity" : 0}), run_time = 1/2)
+
+        arrow5 = Arrow(RIGHT * 4 + DOWN * 1.8, RIGHT * 5.5 + DOWN * 1.8, color = BLUE)
+        arrow5_text = Text("输出", font = "SimSun", font_size = 24).next_to(arrow5, RIGHT)
+        self.play(Write(VGroup(arrow5, arrow5_text)))
+
 if __name__ == "__main__":
-    system("manimgl %s Scene6" % __file__)
+    system("manimgl %s Scene7" % __file__)
 
 # manimgl manim/main.py -w --uhd
