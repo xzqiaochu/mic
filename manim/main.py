@@ -1,4 +1,3 @@
-from turtle import color
 from manimlib import *
 from os import system
 
@@ -312,7 +311,54 @@ class Scene3(Scene):
         tex4 = Tex(r"\vec{x}=(A A^T)^{-1}A^T\vec{b}", font_size = 36).next_to(hint3, DOWN)
         self.play(Write(tex4))
 
+        self.play(ShrinkToCenter(VGroup(axe_all, hint2, tex3, hint3, tex4)))
+
+class Scene4(Scene):
+    def construct(self):
+        r1 = Rectangle(0.2, 0.5, stroke_color = RED, fill_color = RED, fill_opacity = 1).move_to(RIGHT * 0.5 + TOP * 0.3)
+        t1 = Text("麦克风阵列", font = "SimSun", font_size = 24).next_to(r1, RIGHT)
+        self.play(SpinInFromNothing(r1), Write(t1)) # 名称
+        
+        r2 = Rectangle(0.2, 1.5, stroke_color = YELLOW, fill_color = YELLOW, fill_opacity = 1).next_to(r1, DOWN, buff = 1)
+        t2_1 = Text("1个位于中心位置的麦克风", font = "SimSun", font_size = 24).next_to(r2, RIGHT).shift(0.5 * UP)
+        t2_2 = Text("6个位于四周的麦克风", font = "SimSun", font_size = 24).next_to(r2, RIGHT)
+        t2_3 = Text("每个麦克风可将音频转化成数字信号",  font = "SimSun", font_size = 24).next_to(r2, RIGHT).shift(0.5 * DOWN)
+        t2 = VGroup(t2_1, t2_2, t2_3)
+        self.play(SpinInFromNothing(r2), Write(t2)) # 特点
+
+        self.play(ShrinkToCenter(VGroup(r1, t1, r2, t2)))
+
+class Scene5(Scene):
+    def construct(self):
+        r1 = Rectangle(0.2, 0.5, stroke_color = RED, fill_color = RED, fill_opacity = 1).move_to(RIGHT * 0.5 + TOP * 0.3)
+        t1 = Text("单片机开发板", font = "SimSun", font_size = 24).next_to(r1, RIGHT)
+        self.play(SpinInFromNothing(r1), Write(t1)) # 名称
+        
+        r2 = Rectangle(0.2, 1.5, stroke_color = YELLOW, fill_color = YELLOW, fill_opacity = 1).next_to(r1, DOWN, buff = 1)
+        t2_1 = Text("搭载K210芯片", font = "SimSun", font_size = 24).next_to(r2, RIGHT).shift(0.5 * UP)
+        t2_2 = Text("运行主频400M", font = "SimSun", font_size = 24).next_to(r2, RIGHT)
+        t2_3 = Text("最高提供1TOPS的算力",  font = "SimSun", font_size = 24).next_to(r2, RIGHT).shift(0.5 * DOWN)
+        t2 = VGroup(t2_1, t2_2, t2_3)
+        self.play(SpinInFromNothing(r2), Write(t2)) # 特点
+
+        self.play(ShrinkToCenter(VGroup(r1, t1, r2, t2)))
+
+class Scene6(Scene):
+    def construct(self):
+        r1 = Rectangle(0.2, 0.5, stroke_color = RED, fill_color = RED, fill_opacity = 1).move_to(RIGHT * 0.5 + TOP * 0.3)
+        t1 = Text("笔记本电脑", font = "SimSun", font_size = 24).next_to(r1, RIGHT)
+        self.play(SpinInFromNothing(r1), Write(t1)) # 名称
+        
+        r2 = Rectangle(0.2, 1.5, stroke_color = YELLOW, fill_color = YELLOW, fill_opacity = 1).next_to(r1, DOWN, buff = 1)
+        t2_1 = Text("根据各个麦克风测得的空间角", font = "SimSun", font_size = 24).next_to(r2, RIGHT).shift(0.5 * UP)
+        t2_2 = Text("解算出声源的空间位置", font = "SimSun", font_size = 24).next_to(r2, RIGHT)
+        t2_3 = Text("可视化显示",  font = "SimSun", font_size = 24).next_to(r2, RIGHT).shift(0.5 * DOWN)
+        t2 = VGroup(t2_1, t2_2, t2_3)
+        self.play(SpinInFromNothing(r2), Write(t2)) # 特点
+
+        self.play(ShrinkToCenter(VGroup(r1, t1, r2, t2)))
+
 if __name__ == "__main__":
-    system("manimgl %s Scene3" % __file__)
+    system("manimgl %s Scene6" % __file__)
 
 # manimgl manim/main.py -w --uhd
