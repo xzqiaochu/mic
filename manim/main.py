@@ -1,3 +1,4 @@
+from turtle import color
 from manimlib import *
 from os import system
 
@@ -221,7 +222,39 @@ class Scene2(Scene):
         ln2 = Line(axe2.c2p(3, 2, 1), axe2.c2p(0, 0, 0), color = BLUE)
         self.play(ReplacementTransform(VGroup(dn1, ln1), VGroup(dn2, ln2))) # 定位点运动
 
+        self.play(FadeOut(VGroup(g2n, axe1, d12, l12, l22, dn2, ln2, g3n)),
+                ApplyMethod(axe2.move_to, ORIGIN))
+                
+        self.play(ApplyMethod(axe2.scale, 1.5))
+
+class Scene3(Scene):
+    def construct(self):
+        axe = ThreeDAxes(height = 4, width = 4, depth = 4,
+                        x_range = (-3, 3), y_range=(-3, 3), z_range = (-3, 3),
+                        axis_config = {"include_tip" : True})
+        axe.rotate(- PI / 2, RIGHT)
+        axe.rotate(-45 * DEGREES, UP)
+        axe.rotate(-30 * DEGREES, RIGHT + UP)
+        axe.scale(1.5)
+        self.add(axe)
+
+        mic1_p = axe.c2p(-2, 0, 0)
+        mic2_p = axe.c2p(0, 2, 0)
+        mic1 = Dot(mic1_p, color = WHITE)
+        mic2 = Dot(mic2_p, color = WHITE)
+        target_mic1p = axe.c2p(1, 0.75, 3)
+        target_mic2p = axe.c2p(-0.25, -1, 3)
+        mic1_line = Line(mic1_p, target_mic1p)
+        mic2_line = Line(mic2_p, target_mic2p)
+        self.play(Write(VGroup(mic1, mic2, mic1_line, mic2_line)))
+
+        axe_all = VGroup(axe, mic1, mic2, mic1_line, mic2_line)
+        self.play(ApplyMethod(axe_all.rotate, -105 * DEGREES, RIGHT))
+
+        target = Dot(axe.c2p(-0.19553071, 0.38901435, 1.70528992), color = YELLOW)
+        self.play(ShowCreation(target))
+
 if __name__ == "__main__":
-    system("manimgl %s Scene2" % __file__)
+    system("manimgl %s Scene3" % __file__)
 
 # manimgl manim/main.py -w --uhd
