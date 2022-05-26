@@ -1,4 +1,3 @@
-from turtle import left
 from manimlib import *
 from os import system
 
@@ -142,12 +141,85 @@ class Scene2(Scene):
         self.add(g12, g34)
 
         for _ in range(2):
-                self.play(ApplyMethod(r1.set_style, {"fill_opacity" : 1}), run_time = 1/2)
-                self.play(ApplyMethod(r1.set_style, {"fill_opacity" : 0}), run_time = 1/2)
+            self.play(ApplyMethod(r1.set_style, {"fill_opacity" : 1}), run_time = 1/2)
+            self.play(ApplyMethod(r1.set_style, {"fill_opacity" : 0}), run_time = 1/2)
 
         for _ in range(2):
-                self.play(ApplyMethod(r2.set_style, {"fill_opacity" : 1}), run_time = 1/2)
-                self.play(ApplyMethod(r2.set_style, {"fill_opacity" : 0}), run_time = 1/2)
+            self.play(ApplyMethod(r2.set_style, {"fill_opacity" : 1}), run_time = 1/2)
+            self.play(ApplyMethod(r2.set_style, {"fill_opacity" : 0}), run_time = 1/2)
+        
+        self.play(FadeOut(r1), FadeOut(r2),
+                FadeOut(t1), FadeOut(t2),
+                FadeOut(g1), FadeOut(g4)) # 擦除多余麦克风阵列
+
+        # 平面坐标系
+
+        axe1 = Axes(height = 4, width = 4, depth = 4,
+                        x_range = (-3, 3), y_range=(-3, 3),
+                        axis_config = {"include_tip" : True})
+        axe1.move_to(LEFT * 2.5)
+        p3n = Dot().move_to(axe1.c2p(-1, 0))
+        p4n = Dot().move_to(axe1.c2p(0, 0))
+        p5n = Dot().move_to(axe1.c2p(1, 0))
+        c3n = Circle(radius = 0.2, color = WHITE).move_to(axe1.c2p(-1, 0))
+        c4n = Circle(radius = 0.2, color = WHITE).move_to(axe1.c2p(0, 0))
+        c5n = Circle(radius = 0.2, color = WHITE).move_to(axe1.c2p(1, 0))
+        l2n = Line(axe1.c2p(-1, 0), axe1.c2p(1, 0))
+        g2n = VGroup(p3n, p4n, p5n, c3n, c4n, c5n, l2n)
+        self.play(ReplacementTransform(g2, g2n), ShowCreation(axe1)) # 坐标系和麦克风阵列
+
+        d11 = Dot(point = axe1.c2p(2, 1), color = YELLOW)
+        l11 = Line(axe1.c2p(2, 1), axe1.c2p(1, 0), color = BLUE)
+        l21 = Line(axe1.c2p(2, 1), axe1.c2p(-1, 0), color = BLUE)
+        self.play(ShowCreation(VGroup(d11, l11, l21))) # 定位原理连线示意
+
+        d12 = Dot(point = axe1.c2p(1, 2), color = YELLOW)
+        l12 = Line(axe1.c2p(1, 2), axe1.c2p(1, 0), color = BLUE)
+        l22 = Line(axe1.c2p(1, 2), axe1.c2p(-1, 0), color = BLUE)
+        self.play(ReplacementTransform(d11, d12),
+                ReplacementTransform(l11, l12),
+                ReplacementTransform(l21, l22)) # 定位点运动
+
+        # 空间坐标系
+
+        axe2 = ThreeDAxes(height = 4, width = 4, depth = 4,
+                        x_range = (-3, 3), y_range=(-3, 3), z_range = (-3, 3),
+                        axis_config = {"include_tip" : True})
+        axe2.rotate(- PI / 2, RIGHT)
+        axe2.rotate(-45 * DEGREES, UP)
+        axe2.rotate(-30 * DEGREES, RIGHT + UP)
+        axe2.move_to(RIGHT * 2.5)
+
+        p31n = Dot().move_to(axe2.c2p(1, 0))
+        p32n = Dot().move_to(axe2.c2p(1/2, 3**0.5/2))
+        p33n = Dot().move_to(axe2.c2p(-1/2, 3**0.5/2))
+        p34n = Dot().move_to(axe2.c2p(-1, 0))
+        p35n = Dot().move_to(axe2.c2p(-1/2, -3**0.5/2))
+        p36n = Dot().move_to(axe2.c2p(1/2, -3**0.5/2))
+        c31n = Circle(radius = 0.2, color = WHITE).move_to(p31n)
+        c32n = Circle(radius = 0.2, color = WHITE).move_to(p32n)
+        c33n = Circle(radius = 0.2, color = WHITE).move_to(p33n)
+        c34n = Circle(radius = 0.2, color = WHITE).move_to(p34n)
+        c35n = Circle(radius = 0.2, color = WHITE).move_to(p35n)
+        c36n = Circle(radius = 0.2, color = WHITE).move_to(p36n)
+        l31n = Line(axe2.c2p(1, 0, 0), axe2.c2p(1/2, 3**0.5/2, 0))
+        l32n = Line(axe2.c2p(1/2, 3**0.5/2, 0), axe2.c2p(-1/2, 3**0.5/2, 0))
+        l33n = Line(axe2.c2p(-1/2, 3**0.5/2, 0), axe2.c2p(-1, 0, 0))
+        l34n = Line(axe2.c2p(-1, 0, 0), axe2.c2p(-1/2, -3**0.5/2, 0))
+        l35n = Line(axe2.c2p(-1/2, -3**0.5/2, 0), axe2.c2p(1/2, -3**0.5/2, 0))
+        l36n = Line(axe2.c2p(1/2, -3**0.5/2, 0), axe2.c2p(1, 0, 0))
+        g3n = VGroup(p31n, p32n, p33n, p34n, p35n, p36n,
+                c31n, c32n, c33n, c34n, c35n, c36n,
+                l31n, l32n, l33n, l34n, l35n, l36n)
+        self.play(ReplacementTransform(g3, g3n), ShowCreation(axe2)) # 坐标系和麦克风阵列
+
+        dn1 = Dot(point = axe2.c2p(1, 2, 3), color = YELLOW)
+        ln1 = Line(axe2.c2p(1, 2, 3), axe2.c2p(0, 0, 0), color = BLUE)
+        self.play(ShowCreation(VGroup(dn1, ln1))) # 定位原理连线示意
+
+        dn2 = Dot(point = axe2.c2p(3, 2, 1), color = YELLOW)
+        ln2 = Line(axe2.c2p(3, 2, 1), axe2.c2p(0, 0, 0), color = BLUE)
+        self.play(ReplacementTransform(VGroup(dn1, ln1), VGroup(dn2, ln2))) # 定位点运动
 
 if __name__ == "__main__":
     system("manimgl %s Scene2" % __file__)
