@@ -246,13 +246,21 @@ class Scene3(Scene):
         target_mic2p = axe.c2p(-0.25, -1, 3)
         mic1_line = Line(mic1_p, target_mic1p)
         mic2_line = Line(mic2_p, target_mic2p)
-        self.play(Write(VGroup(mic1, mic2, mic1_line, mic2_line)))
+        self.play(Write(VGroup(mic1, mic2, mic1_line, mic2_line))) # 画麦克风的定位方向
 
         axe_all = VGroup(axe, mic1, mic2, mic1_line, mic2_line)
-        self.play(ApplyMethod(axe_all.rotate, -105 * DEGREES, RIGHT))
+        self.play(ApplyMethod(axe_all.rotate, -105 * DEGREES, RIGHT)) # 旋转视角
 
         target = Dot(axe.c2p(-0.19553071, 0.38901435, 1.70528992), color = YELLOW)
-        self.play(ShowCreation(target))
+        self.play(ShowCreation(target)) # 最小二乘解
+
+        axe_all.add(target)
+        def func(axe_all):
+            axe_all.rotate(105 * DEGREES, RIGHT) # 视角转回去
+            axe_all.move_to(LEFT * 3) # 移到左边
+            axe_all.scale(0.75) # 缩小
+            return axe_all
+        self.play(ApplyFunction(func, axe_all)) 
 
 if __name__ == "__main__":
     system("manimgl %s Scene3" % __file__)
