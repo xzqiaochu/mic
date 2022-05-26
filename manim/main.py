@@ -260,7 +260,57 @@ class Scene3(Scene):
             axe_all.move_to(LEFT * 3) # 移到左边
             axe_all.scale(0.75) # 缩小
             return axe_all
-        self.play(ApplyFunction(func, axe_all)) 
+        self.play(ApplyFunction(func, axe_all))
+
+        tex1 = Tex(r"""\left\{
+    \begin{array}{cccc}
+	a_{11} x_1 + a_{12} x_2 + a_{13} x_3 = b_1 \\
+	a_{21} x_1 + a_{22} x_2 + a_{23} x_3 = b_2 \\
+	a_{31} x_1 + a_{32} x_2 + a_{33} x_3 = b_3 \\
+	a_{41} x_1 + a_{42} x_2 + a_{43} x_3 = b_4
+    \end{array}
+\right.""", font_size = 36).move_to(RIGHT * 3)
+        hint1 = Text("空间内的每条直线可提供两个方程", font = "SimSun", font_size = 24).next_to(tex1, UP)
+        self.play(Write(hint1))
+        self.play(Write(tex1))
+
+        tex2 = Tex(r"""\left[
+  \begin{array}{cccc}
+    a_{11} & a_{12} & a_{13} \\
+    a_{21} & a_{22} & a_{23} \\
+    a_{31} & a_{32} & a_{33} \\
+    a_{41} & a_{42} & a_{43}
+  \end{array}
+\right]
+\left[
+  \begin{array}{ccc}
+    x_1 \\
+    x_2 \\
+    x_3
+  \end{array}
+\right]
+=
+\left[
+  \begin{array}{ccc}
+    b_1 \\
+    b_2 \\
+    b_3 \\
+    b_4
+  \end{array}
+\right]""", font_size = 36).move_to(RIGHT * 3)
+        hint2 = Text("写成矩阵的形式", font = "SimSun", font_size = 24).next_to(tex1, UP)
+        self.play(FadeOut(hint1))
+        self.play(Write(hint2))
+        self.play(ReplacementTransform(tex1, tex2))
+
+        tex3 = Tex(r"A \vec{x} = \vec{b}", font_size = 36).next_to(hint2, DOWN)
+        self.play(ReplacementTransform(tex2, tex3))
+
+        hint3 = Text("其最小二乘解为", font = "SimSun", font_size = 24).next_to(tex3, DOWN)
+        self.play(Write(hint3))
+
+        tex4 = Tex(r"\vec{x}=(A A^T)^{-1}A^T\vec{b}", font_size = 36).next_to(hint3, DOWN)
+        self.play(Write(tex4))
 
 if __name__ == "__main__":
     system("manimgl %s Scene3" % __file__)
