@@ -6,4 +6,4 @@
 
 ## Scene 2
 
-- gif动图不动了
+- gif动图不动了（manim貌似不支持）

@@ -41,7 +41,10 @@ class Scene2(Scene):
                 ReplacementTransform(line2, line4),
                 rate_func = smooth, run_time = 3)
 
-        self.play(Indicate(line4, color = RED, scale_factor = 1))
+        for _ in range(2):
+                self.play(ApplyMethod(line4.set_style, {"stroke_color" : RED}), run_time = 1/2)
+                self.play(ApplyMethod(line4.set_style, {"stroke_color" : BLUE}), run_time = 1/2)
+
         self.play(FadeOut(line4))
 
         line5 = Line(2.4 * UP + 4 * RIGHT, 2 * DOWN + 0.8 * RIGHT, stroke_color = BLUE)
@@ -81,12 +84,14 @@ class Scene2(Scene):
         p2 = Dot().move_to(2 * DOWN + 0.8 * LEFT)
         c1 = Circle(radius = 0.2, color = WHITE).move_to(2 * DOWN + 0.8 * RIGHT)
         c2 = Circle(radius = 0.2, color = WHITE).move_to(2 * DOWN + 0.8 * LEFT)
-        l1 = Line(2 * DOWN + 0.6 * RIGHT, 2 * DOWN + 0.6 * LEFT)
+        l1 = Line(2 * DOWN + 0.8 * RIGHT, 2 * DOWN + 0.8 * LEFT)
         g1 = VGroup(p1, p2, c1, c2, l1)
         self.play(FadeIn(g1), FadeOut(image_person))
 
         g0 = VGroup(b1, b1text, b2, b2text, b3, b3text, line5, line6)
-        self.play(FadeOut(image_car), FadeOut(g0), ApplyMethod(g1.move_to, LEFT * 3 + 0.2 * TOP))
+        self.play(FadeOut(image_car), FadeOut(g0))
+
+        self.play(ApplyMethod(g1.move_to, LEFT * 2.5 + 0.5 * UP))
         
         p3 = Dot().move_to(LEFT)
         p4 = Dot()
@@ -94,10 +99,55 @@ class Scene2(Scene):
         c3 = Circle(radius = 0.2, color = WHITE).move_to(LEFT)
         c4 = Circle(radius = 0.2, color = WHITE)
         c5 = Circle(radius = 0.2, color = WHITE).move_to(RIGHT)
-        l2 = Line(0.8 * LEFT, 0.2 * LEFT)
-        l3 = Line(0.8 * RIGHT, 0.2 * RIGHT)
-        g2 = VGroup(p3, p4, p5, c3, c4, c5, l2, l3).move_to(LEFT * 3 + 0.2 * DOWN)
-        self.play(FadeIn(g2))
+        l2 = Line(LEFT, RIGHT)
+        g2 = VGroup(p3, p4, p5, c3, c4, c5, l2).move_to(LEFT * 2.5 + 0.5 * DOWN)
+        self.play(ShowCreation(g2))
+
+        p31 = Dot().move_to(np.array((1, 0, 0)))
+        p32 = Dot().move_to(np.array((1/2, 3**0.5/2, 0)))
+        p33 = Dot().move_to(np.array((-1/2, 3**0.5/2, 0)))
+        p34 = Dot().move_to(np.array((-1, 0, 0)))
+        p35 = Dot().move_to(np.array((-1/2, -3**0.5/2, 0)))
+        p36 = Dot().move_to(np.array((1/2, -3**0.5/2, 0)))
+        c31 = Circle(radius = 0.2, color = WHITE).move_to(p31)
+        c32 = Circle(radius = 0.2, color = WHITE).move_to(p32)
+        c33 = Circle(radius = 0.2, color = WHITE).move_to(p33)
+        c34 = Circle(radius = 0.2, color = WHITE).move_to(p34)
+        c35 = Circle(radius = 0.2, color = WHITE).move_to(p35)
+        c36 = Circle(radius = 0.2, color = WHITE).move_to(p36)
+        l31 = Line(np.array((1, 0, 0)), np.array((1/2, 3**0.5/2, 0)))
+        l32 = Line(np.array((1/2, 3**0.5/2, 0)), np.array((-1/2, 3**0.5/2, 0)))
+        l33 = Line(np.array((-1/2, 3**0.5/2, 0)), np.array((-1, 0, 0)))
+        l34 = Line(np.array((-1, 0, 0)), np.array((-1/2, -3**0.5/2, 0)))
+        l35 = Line(np.array((-1/2, -3**0.5/2, 0)), np.array((1/2, -3**0.5/2, 0)))
+        l36 = Line(np.array((1/2, -3**0.5/2, 0)), np.array((1, 0, 0)))
+        g3 = VGroup(p31, p32, p33, p34, p35, p36,
+                c31, c32, c33, c34, c35, c36,
+                l31, l32, l33, l34, l35, l36)
+        g4 = g3.copy()
+        p41 = Dot()
+        c41 = Circle(radius = 0.2, color = WHITE)
+        g4.add(p41, c41)
+        g4.next_to(g3, DOWN)
+        g34 = VGroup(g3, g4).move_to(RIGHT * 2.5)
+        self.play(ShowCreation(g34))
+
+        g12 = VGroup(g1, g2)
+        r1 = RoundedRectangle(corner_radius = 0.2, width = 6, height = 12, fill_color = RED, fill_opacity = 0).surround(g12)
+        r2 = RoundedRectangle(corner_radius = 0.2, width = 6, height = 12, fill_color = RED, fill_opacity = 0).surround(g34)
+        t1 = Text("线性阵列", font="SimSun", font_size = 24).next_to(r1, DOWN)
+        t2 = Text("平面阵列", font="SimSun", font_size = 24).next_to(r2, DOWN)
+        self.play(ShowCreation(r1), ShowCreation(r2), ShowCreation(t1), ShowCreation(t2))
+        self.remove(g12, g34)
+        self.add(g12, g34)
+
+        for _ in range(2):
+                self.play(ApplyMethod(r1.set_style, {"fill_opacity" : 1}), run_time = 1/2)
+                self.play(ApplyMethod(r1.set_style, {"fill_opacity" : 0}), run_time = 1/2)
+
+        for _ in range(2):
+                self.play(ApplyMethod(r2.set_style, {"fill_opacity" : 1}), run_time = 1/2)
+                self.play(ApplyMethod(r2.set_style, {"fill_opacity" : 0}), run_time = 1/2)
 
 if __name__ == "__main__":
     system("manimgl %s Scene2" % __file__)
